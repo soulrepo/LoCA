@@ -17,3 +17,13 @@ Copy this folder into `Interface/AddOns/LoCA` (the folder must be named `LoCA`).
 ## License
 
 MIT. The original LoCA is Copyright (c) 2021 Angel Vasilev ([a-vasilev/classic-loca](https://github.com/a-vasilev/classic-loca)); this port keeps that copyright and permission notice in [LICENSE](LICENSE).
+
+## Tools
+
+`tools/extract_spells.py` reads Spell.dbc straight from the client's MPQs (pure Python, no StormLib) and lists every spell that is new or changed compared to the 1.12.1 client:
+
+```
+python3 tools/extract_spells.py "<WoW folder>/Data" data
+```
+
+It writes `data/custom_spells.csv` (all new or changed spells, with the patch that introduced them) and `data/loc_spells.csv` (the ones that cause loss of control, with the LoCA category they map to). The CSVs are game data, so they are not committed.
