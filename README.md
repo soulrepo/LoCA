@@ -3,7 +3,7 @@
 Port of [LoCA - Loss of Control Alerter](https://github.com/a-vasilev/classic-loca) (MIT, by Rdmx) to the 1.12 client.
 
 - **Retail mode** (default) uses `C_LossOfControl` from ClassicAPI.dll.
-- **Custom mode** reads your debuffs (ClassicAPI's `C_UnitAuras`, or SuperWoW spell ids as a fallback) and alerts on the ones in the tracked list.
+- **Custom mode** reads your debuffs (ClassicAPI's `C_UnitAuras`, or SuperWoW spell ids as a fallback) and alerts on the ones in the tracked list. Debuffs not in the list (such as octowow's custom spells) fall back to the spell's mechanic from ClassicAPI, so a custom stun still shows as Stunned. This can be turned off in `/loca`.
 - Ace3 is gone: settings live in `LoCADB` and the options are a native panel.
 
 Commands: `/loca` (options), `/loca test`, `/loca unlock`, `/loca lock`, `/loca reset`.

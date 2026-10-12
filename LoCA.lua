@@ -24,6 +24,8 @@ addon.defaultSettings = {
     showRedLines = true,
     showBackground = true,
     showSecondsLabel = true,
+    -- custom mode: alert on unlisted debuffs by their spell mechanic
+    mechanicFallback = true,
     -- Custom mode matches debuffs by name, so any rank of a spell works.
     debuffsTable = {
       { spellId = 122, category = "Rooted", weight = 1, active = true, type = 1 },     --[[ Frost Nova --]]

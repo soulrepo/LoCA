@@ -94,7 +94,7 @@ end
 
 function options:CreateFrame()
   local debuffs = addon.debuffs
-  frame = CreateDialog("LoCAOptionsFrame", 360, 520, addon.addonTitle)
+  frame = CreateDialog("LoCAOptionsFrame", 360, 550, addon.addonTitle)
 
   local description = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
   description:SetPoint("TOPLEFT", frame, "TOPLEFT", 24, -48)
@@ -129,9 +129,13 @@ function options:CreateFrame()
     options:ToggleDebuffList()
   end)
   widgets.debuffList:SetPoint("LEFT", widgets.test, "RIGHT", 8, 0)
+  widgets.mechanicFallback = CreateCheck("LoCAOptionsMechanicFallback", frame, "Custom: also alert on unlisted debuffs by mechanic", function(val)
+    addon.debuffs:SetMechanicFallback(val)
+  end)
+  widgets.mechanicFallback:SetPoint("TOPLEFT", widgets.lock, "BOTTOMLEFT", 0, -4)
 
   -- Visuals
-  local visualsHeader = CreateHeader(frame, "Visuals", widgets.lock, -14)
+  local visualsHeader = CreateHeader(frame, "Visuals", widgets.mechanicFallback, -8)
   widgets.scale = CreateSlider("LoCAOptionsScale", frame, "Scale", 0.1, 3, function(value) debuffs:SetScale(value) end)
   widgets.scale:SetPoint("TOPLEFT", visualsHeader, "BOTTOMLEFT", 4, -18)
   widgets.alpha = CreateSlider("LoCAOptionsAlpha", frame, "Alpha", 0.1, 1, function(value) debuffs:SetAlpha(value) end)
@@ -296,8 +300,10 @@ function options:Refresh()
 
   if db.mode == "custom" then
     widgets.debuffList:Enable()
+    widgets.mechanicFallback:Enable()
   else
     widgets.debuffList:Disable()
+    widgets.mechanicFallback:Disable()
     if debuffListFrame then debuffListFrame:Hide() end
   end
 
@@ -310,6 +316,7 @@ function options:Refresh()
   LoCAOptionsScaleText:SetText("Scale: " .. Round(db.scale))
   LoCAOptionsAlphaText:SetText("Alpha: " .. Round(db.alpha))
 
+  widgets.mechanicFallback:SetChecked(db.mechanicFallback)
   widgets.showRedLines:SetChecked(db.showRedLines)
   widgets.showBackground:SetChecked(db.showBackground)
   widgets.showSecondsLabel:SetChecked(db.showSecondsLabel)

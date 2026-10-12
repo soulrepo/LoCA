@@ -51,7 +51,7 @@ local iconFrame
 
 local TIME_COMPARISON_THRESHOLD = 0.1
 
--- Returns found, name, icon, timeLeft (nil when the debuff has no duration).
+-- Returns found, name, icon, timeLeft (nil when the debuff has no duration), spellId.
 local function GetPlayerDebuff(index)
   if C_UnitAuras and C_UnitAuras.GetDebuffDataByIndex then
     local aura = C_UnitAuras.GetDebuffDataByIndex("player", index)
@@ -60,7 +60,7 @@ local function GetPlayerDebuff(index)
     if aura.expirationTime and aura.expirationTime > 0 then
       timeLeft = aura.expirationTime - GetTime()
     end
-    return true, aura.name, aura.icon, timeLeft
+    return true, aura.name, aura.icon, timeLeft, aura.spellId
   end
 
   -- SuperWoW adds the spell id as UnitDebuff's 4th return
@@ -79,7 +79,104 @@ local function GetPlayerDebuff(index)
     if timeLeft and timeLeft <= 0 then timeLeft = nil end
   end
 
-  return true, name, texture, timeLeft
+  return true, name, texture, timeLeft, spellId
+end
+
+-- Mechanic fallback for custom mode: debuffs that aren't in the tracked list
+-- (such as octowow's custom spells) are classified by the mechanic ClassicAPI
+-- reports for them. Ids are from SpellMechanic.dbc; snares and dazes are left
+-- out, like in the default list.
+local MECHANIC_MAP = {
+  [1] = { category = "Charmed", type = 4 },
+  [2] = { category = "Disoriented", type = 4 },
+  [3] = { category = "Disarmed", type = 2 },
+  [5] = { category = "Feared", type = 4 },
+  [7] = { category = "Rooted", type = 1 },
+  [8] = { category = "Pacified", type = 3 },
+  [9] = { category = "Silenced", type = 2 },
+  [10] = { category = "Asleep", type = 4 },
+  [12] = { category = "Stunned", type = 3 },
+  [13] = { category = "Frozen", type = 4 },
+  [14] = { category = "Incapacitated", type = 4 },
+  [17] = { category = "Polymorphed", type = 4 },
+  [18] = { category = "Banished", type = 4 },
+  [20] = { category = "Shackled", type = 4 },
+  [23] = { category = "Feared", type = 4 },
+  [24] = { category = "Horrified", type = 4 },
+  [30] = { category = "Sapped", type = 4 },
+}
+
+local function FindSpellApi(name)
+  if C_Spell and type(C_Spell[name]) == "function" then
+    return C_Spell[name]
+  end
+  local global = getglobal(name)
+  if type(global) == "function" then
+    return global
+  end
+end
+
+-- Returns the mapped mechanic ids for a spell: the spell's own mechanic, then its per-effect ones.
+local function GetSpellMechanics(spellId)
+  local mechanics = {}
+
+  local getMechanic = FindSpellApi("GetSpellMechanicByID")
+  if getMechanic then
+    local mechanicId = getMechanic(spellId)
+    if mechanicId and mechanicId ~= 0 then
+      table.insert(mechanics, mechanicId)
+    end
+  end
+
+  local getEffectMechanics = FindSpellApi("GetSpellEffectMechanics")
+  if getEffectMechanics then
+    local first, second, third = getEffectMechanics(spellId)
+    if type(first) == "table" then
+      first, second, third = first[1], first[2], first[3]
+    end
+    for _, mechanicId in ipairs({ first or 0, second or 0, third or 0 }) do
+      if mechanicId ~= 0 then
+        table.insert(mechanics, mechanicId)
+      end
+    end
+  end
+
+  return mechanics
+end
+
+local mechanicCache = {}
+
+function locaDebuffs:ClassifyByMechanic(spellId, name, icon)
+  if not spellId then return nil end
+
+  local cached = mechanicCache[spellId]
+  if cached ~= nil then
+    return cached or nil
+  end
+
+  local best
+  for _, mechanicId in ipairs(GetSpellMechanics(spellId)) do
+    local mapped = MECHANIC_MAP[mechanicId]
+    if mapped and (not best or mapped.type > best.type) then
+      best = mapped
+    end
+  end
+
+  local debuff = false
+  if best then
+    debuff = {
+      spellId = spellId,
+      name = name,
+      icon = icon,
+      category = best.category,
+      weight = best.type,
+      type = best.type,
+      active = true,
+    }
+  end
+
+  mechanicCache[spellId] = debuff
+  return debuff or nil
 end
 
 function locaDebuffs:OnDebuffsChanged()
@@ -87,10 +184,13 @@ function locaDebuffs:OnDebuffsChanged()
   local candidateDurations = {}
 
   for i = 1, 16 do
-    local found, name, _, durationLeft = GetPlayerDebuff(i)
+    local found, name, icon, durationLeft, spellId = GetPlayerDebuff(i)
     if not found then break end
 
     local debuffIcon = name and initializedDebuffs[name]
+    if not debuffIcon and locaDebuffs.db.mechanicFallback then
+      debuffIcon = locaDebuffs:ClassifyByMechanic(spellId, name, icon)
+    end
 
     -- check if the debuff is being monitored for alerts
     if debuffIcon and debuffIcon.active then
@@ -531,6 +631,12 @@ function locaDebuffs:SetShowSecondsLabel(val)
   locaDebuffs.db.showSecondsLabel = val
 
   locaDebuffs:UpdateContainer()
+end
+
+function locaDebuffs:SetMechanicFallback(val)
+  locaDebuffs.db.mechanicFallback = val
+
+  locaDebuffs:NotifyUpdate()
 end
 
 function locaDebuffs:SetShowBackground(val)
