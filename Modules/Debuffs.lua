@@ -82,9 +82,9 @@ local function GetPlayerDebuff(index)
   return true, name, texture, timeLeft, spellId
 end
 
--- Mechanic fallback for custom mode: debuffs that aren't in the tracked list
--- (such as octowow's custom spells) are classified by the mechanic ClassicAPI
--- reports for them. Ids are from SpellMechanic.dbc; snares and dazes are left
+-- Fallback for custom mode: debuffs that aren't in the tracked list (such as
+-- octowow's custom spells) are classified by the generated spell table or by
+-- the mechanic ClassicAPI reports for them. Ids are from SpellMechanic.dbc; snares and dazes are left
 -- out, like in the default list.
 local MECHANIC_MAP = {
   [1] = { category = "Charmed", type = 4 },
@@ -146,6 +146,9 @@ end
 
 local mechanicCache = {}
 
+-- Classifies an unlisted debuff: first by the spell table generated from the
+-- client's Spell.dbc (Modules/SpellData.lua), which also covers spells that only
+-- carry a stun/root/fear aura, then by the mechanic ClassicAPI reports.
 function locaDebuffs:ClassifyByMechanic(spellId, name, icon)
   if not spellId then return nil end
 
@@ -155,10 +158,15 @@ function locaDebuffs:ClassifyByMechanic(spellId, name, icon)
   end
 
   local best
-  for _, mechanicId in ipairs(GetSpellMechanics(spellId)) do
-    local mapped = MECHANIC_MAP[mechanicId]
-    if mapped and (not best or mapped.type > best.type) then
-      best = mapped
+  local known = addon.spellData and addon.spellData[spellId]
+  if known then
+    best = addon.spellCategories[known]
+  else
+    for _, mechanicId in ipairs(GetSpellMechanics(spellId)) do
+      local mapped = MECHANIC_MAP[mechanicId]
+      if mapped and (not best or mapped.type > best.type) then
+        best = mapped
+      end
     end
   end
 

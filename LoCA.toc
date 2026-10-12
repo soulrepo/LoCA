@@ -7,5 +7,6 @@
 ## SavedVariables: LoCADB
 
 LoCA.lua
+Modules\SpellData.lua
 Modules\Debuffs.lua
 Options.lua

@@ -3,7 +3,7 @@
 Port of [LoCA - Loss of Control Alerter](https://github.com/a-vasilev/classic-loca) (MIT, by Rdmx) to the 1.12 client.
 
 - **Retail mode** (default) uses `C_LossOfControl` from ClassicAPI.dll.
-- **Custom mode** reads your debuffs (ClassicAPI's `C_UnitAuras`, or SuperWoW spell ids as a fallback) and alerts on the ones in the tracked list. Debuffs not in the list (such as octowow's custom spells) fall back to the spell's mechanic from ClassicAPI, so a custom stun still shows as Stunned. This can be turned off in `/loca`.
+- **Custom mode** reads your debuffs (ClassicAPI's `C_UnitAuras`, or SuperWoW spell ids as a fallback) and alerts on the ones in the tracked list. Debuffs not in the list (such as octowow's custom spells) fall back to a spell table generated from the client's Spell.dbc (`Modules/SpellData.lua`, 988 spells) and then to the spell's mechanic from ClassicAPI, so a custom stun still shows as Stunned. This can be turned off in `/loca`.
 - Ace3 is gone: settings live in `LoCADB` and the options are a native panel.
 
 Commands: `/loca` (options), `/loca test`, `/loca unlock`, `/loca lock`, `/loca reset`.
@@ -26,4 +26,4 @@ MIT. The original LoCA is Copyright (c) 2021 Angel Vasilev ([a-vasilev/classic-l
 python3 tools/extract_spells.py "<WoW folder>/Data" data
 ```
 
-It writes `data/custom_spells.csv` (all new or changed spells, with the patch that introduced them) and `data/loc_spells.csv` (the ones that cause loss of control, with the LoCA category they map to). The CSVs are game data, so they are not committed.
+It writes `data/custom_spells.csv` (all new or changed spells, with the patch that introduced them) and `data/loc_spells.csv` (the ones that cause loss of control, with the LoCA category they map to). The CSVs are not committed. Pass `Modules/SpellData.lua` as a third argument to regenerate the addon's spell table after a client patch.
