@@ -1,0 +1,11 @@
+## Interface: 11200
+## Title: Loss of Control Alerter
+## Notes: Shows alerts on loss of control debuffs
+## Version: 1.14-octo1
+## Author: Rdmx, 1.12 port for octowow
+## DefaultState: Enabled
+## SavedVariables: LoCADB
+
+LoCA.lua
+Modules\Debuffs.lua
+Options.lua
